@@ -422,6 +422,20 @@ if [ "$__HostOS" == "OSX" ]; then
     export LLDB_LIB=/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/LLDB
     export LLDB_PATH=/Applications/Xcode.app/Contents/Developer/usr/bin/lldb
 
+    if [ -f "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/LLDB" ]; then
+        if [ -f "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb" ]; then
+            export LLDB_LIB=/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/LLDB
+            export LLDB_PATH=/Applications/Xcode.app/Contents/Developer/usr/bin/lldb
+        fi
+    fi
+
+    if [ -f "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/LLDB" ]; then
+        if [ -f "/Library/Developer/CommandLineTools/usr/bin/lldb" ]; then
+            export LLDB_LIB=/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/LLDB
+            export LLDB_PATH=/Library/Developer/CommandLineTools/usr/bin/lldb
+        fi
+    fi
+
     export MACOSX_DEPLOYMENT_TARGET=10.12
 
     # If Xcode 9.2 exists (like on the CI/build machines), use that. Xcode 9.3 or 

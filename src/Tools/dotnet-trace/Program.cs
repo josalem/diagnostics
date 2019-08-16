@@ -20,6 +20,7 @@ namespace Microsoft.Diagnostics.Tools.Trace
                 .AddCommand(ListProcessesCommandHandler.ListProcessesCommand())
                 .AddCommand(ListProfilesCommandHandler.ListProfilesCommand())
                 .AddCommand(ConvertCommandHandler.ConvertCommand())
+                .AddCommand(GCDumpCommandHandler.GCDumpCommand())
                 .UseDefaults()
                 .Build();
 

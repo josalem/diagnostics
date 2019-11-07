@@ -277,7 +277,7 @@ namespace Microsoft.Diagnostics.Tools.Trace
                         continue;
 
                     string[] names = frameModuleName.Split(new char[] { '!' }, options: StringSplitOptions.RemoveEmptyEntries);
-                    var frameName = names.Length == 1 ? "foobar" : names.Skip(1).Aggregate((x, y) => x + y);
+                    var frameName = names.Length == 1 ? names[0] : names.Skip(1).Aggregate((x, y) => x + y);
                     var moduleName = names[0];
 
                     if (!exportedFrameNameToExportedFrameId.TryGetValue(frameName, out int exportedFrameId))
@@ -409,43 +409,43 @@ namespace Microsoft.Diagnostics.Tools.Trace
                 foreach (var profileEvent in sortedProfileEvents)
                 {
                     if (!isFirst)
-                        writer.Write(", ");
+                        writer.Write(",");
                     else
                         isFirst = false;
 
                     writer.Write("{");
-                    writer.Write($"\"name\": \"{frameIdToFrameTuple[profileEvent.FrameId].FrameName}\", ");
-                    writer.Write($"\"cat\": \"sampleEvent\", ");
-                    writer.Write($"\"ph\": \"{(profileEvent.Type == ProfileEventType.Open ? "B" : "E")}\", ");
-                    writer.Write($"\"ts\": {profileEvent.RelativeTime.ToString("R", CultureInfo.InvariantCulture)}, ");
-                    writer.Write($"\"pid\": {pid}, ");
-                    writer.Write($"\"tid\": {tid}, ");
-                    writer.Write($"\"sf\": {profileEvent.FrameId}");
+                    writer.Write($"\"name\":\"{frameIdToFrameTuple[profileEvent.FrameId].FrameName}\",");
+                    writer.Write($"\"cat\": \"sampleEvent\",");
+                    writer.Write($"\"ph\":\"{(profileEvent.Type == ProfileEventType.Open ? "B" : "E")}\",");
+                    writer.Write($"\"ts\":{(profileEvent.RelativeTime * 1000).ToString("R", CultureInfo.InvariantCulture)},");
+                    writer.Write($"\"pid\":{pid},");
+                    writer.Write($"\"tid\":{tid},");
+                    writer.Write($"\"sf\":{profileEvent.FrameId}");
                     writer.Write("}");
                 }
             }
-            writer.Write("], ");
-            writer.Write("\"displayTimeUnit\": \"ms\", ");
-            writer.Write("\"stackFrames\": {");
+            writer.Write("],");
+            writer.Write("\"displayTimeUnit\":\"ms\",");
+            writer.Write("\"stackFrames\":{");
             isFirst = true;
             foreach (var frame in frameIdToFrameTuple)
             {
                 if (!isFirst)
-                    writer.Write(", ");
+                    writer.Write(",");
                 else
                     isFirst = false;
 
                 var frameId = frame.Key;
                 var tuple = frame.Value;
-                writer.Write($"{frameId}: {{");
-                writer.Write($"\"name\": {tuple.FrameName}, ");
-                writer.Write($"\"category\": \"{tuple.ModuleName}\"");
+                writer.Write($"{frameId}:{{");
+                writer.Write($"\"name\":{tuple.FrameName},");
+                writer.Write($"\"category\":\"{tuple.ModuleName}\"");
                 if (tuple.ParentId != -1)
-                    writer.Write($", \"parent\": {tuple.ParentId}");
+                    writer.Write($",\"parent\":{tuple.ParentId}");
                 writer.Write("}");
             }
-            writer.Write("}, ");
-            writer.Write($"\"otherData\": {{ \"name\": \"{name}\" }}");
+            writer.Write("},");
+            writer.Write($"\"otherData\":{{\"name\":\"{name}\" }}");
             writer.Write("}");
         }
 

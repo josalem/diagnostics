@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework Condition="'$(PublishSingleFile)' == 'true'">netcoreapp3.0</TargetFramework>
+    <TargetFramework Condition="'$(PublishSingleFile)' != 'true'">netcoreapp2.1</TargetFramework>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ToolCommandName>dotnet-counters</ToolCommandName>
     <RootNamespace>Microsoft.Diagnostics.Tools.Counters</RootNamespace>

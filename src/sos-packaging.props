@@ -104,4 +104,105 @@
       <PackagePath>$(SOSPackagePathPrefix)/osx-x64</PackagePath>
     </None>
   </ItemGroup>
+
+  <!-- Bundles native sos dependencies when doing "single file" -->
+  <Choose>
+    <When Condition="'$(RuntimeIdentifier)' == 'win-x86'">
+      <ItemGroup Condition="'$(BundleTools)' == 'true'">
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Windows_NT.x86.$(Configuration)\sos.dll">
+          <RelativePath>win-x86</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Windows_NT.x86.$(Configuration)\Microsoft.DiaSymReader.Native.x86.dll">
+          <RelativePath>win-x86</RelativePath>
+        </_FilesToBundle>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(RuntimeIdentifier)' == 'win-x64'">
+      <ItemGroup Condition="'$(BundleTools)' == 'true'">
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Windows_NT.x64.$(Configuration)\sos.dll">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Windows_NT.x64.$(Configuration)\Microsoft.DiaSymReader.Native.amd64.dll">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(RuntimeIdentifier)' == 'win-arm'">
+      <ItemGroup Condition="'$(BundleTools)' == 'true'">
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Windows_NT.arm.$(Configuration)\sos.dll">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Windows_NT.arm.$(Configuration)\Microsoft.DiaSymReader.Native.arm.dll">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(RuntimeIdentifier)' == 'linux-x64'">
+      <ItemGroup Condition="'$(BundleTools)' == 'true'">
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.x64.$(Configuration)\libsosplugin.so">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.x64.$(Configuration)\libsos.so">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.x64.$(Configuration)\sosdocsunix.txt">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(RuntimeIdentifier)' == 'linux-musl-x64'">
+      <ItemGroup Condition="'$(BundleTools)' == 'true'">
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux-musl.x64.$(Configuration)\libsosplugin.so">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux-musl.x64.$(Configuration)\libsos.so">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux-musl.x64.$(Configuration)\sosdocsunix.txt">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(RuntimeIdentifier)' == 'linux-arm'">
+      <ItemGroup Condition="'$(BundleTools)' == 'true'">
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.arm.$(Configuration)\libsosplugin.so">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.arm.$(Configuration)\libsos.so">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.arm.$(Configuration)\sosdocsunix.txt">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">
+      <ItemGroup Condition="'$(BundleTools)' == 'true'">
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.arm64.$(Configuration)\libsosplugin.so">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.arm64.$(Configuration)\libsos.so">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\Linux.arm64.$(Configuration)\sosdocsunix.txt">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+      </ItemGroup>
+    </When>
+    <When Condition="'$(RuntimeIdentifier)' == 'osx-x64'">
+      <ItemGroup Condition="'$(BundleTools)' == 'true'">
+        <_FilesToBundle Include="$(ArtifactsBinDir)\OSX.x64.$(Configuration)\libsosplugin.dylib">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\OSX.x64.$(Configuration)\libsos.dylib">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+        <_FilesToBundle Include="$(ArtifactsBinDir)\OSX.x64.$(Configuration)\sosdocsunix.txt">
+          <RelativePath>$(RuntimeIdentifier)/%(Filename)%(Extension)</RelativePath>
+        </_FilesToBundle>
+      </ItemGroup>
+    </When>
+    <Otherwise>
+    </Otherwise>
+  </Choose>
 </Project>

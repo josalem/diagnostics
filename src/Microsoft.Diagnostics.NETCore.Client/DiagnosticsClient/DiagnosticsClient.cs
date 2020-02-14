@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Diagnostics.Tracing;
 
 namespace Microsoft.Diagnostics.NETCore.Client
 {
@@ -19,10 +20,62 @@ namespace Microsoft.Diagnostics.NETCore.Client
     public sealed class DiagnosticsClient
     {
         private int _processId;
+        private string _pipeName;
 
         public DiagnosticsClient(int processId)
         {
             _processId = processId;
+        }
+
+        public DiagnosticsClient(string pipeName)
+        {
+            _pipeName = pipeName;
+        }
+
+        public (Stream, long) StartReversedEventPipe()
+        {
+            var stream = IpcClient.GetTransport(_pipeName);
+            var config = new EventPipeSessionConfiguration(
+                512,
+                EventPipeSerializationFormat.NetTrace,
+                new List<EventPipeProvider>
+                {
+                    new EventPipeProvider("Microsoft-DotNETCore-SampleProfiler", EventLevel.Informational),
+                    new EventPipeProvider("Microsoft-Windows-DotNETRuntime", EventLevel.Verbose, (long)5)
+                },
+                true);
+            var message = new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.CollectTracing2, config.SerializeV2());
+            Stream EventStream = IpcClient.SendMessage(stream, message, out var response);
+            long sessionId = 0;
+            switch ((DiagnosticsServerCommandId)response.Header.CommandId)
+            {
+                case DiagnosticsServerCommandId.OK:
+                    sessionId = BitConverter.ToInt64(response.Payload, 0);
+                    break;
+                case DiagnosticsServerCommandId.Error:
+                    var hr = BitConverter.ToInt32(response.Payload, 0);
+                    throw new ServerErrorException($"EventPipe session start failed (HRESULT: 0x{hr:X8})");
+                default:
+                    throw new ServerErrorException($"EventPipe session start failed - Server responded with unknown command");
+            }
+            return (EventStream, sessionId);
+        }
+
+        public void StopReversedEventPipe(long sessionId)
+        {
+            byte[] payload = BitConverter.GetBytes(sessionId);
+            Stream stream = IpcClient.GetTransport(_pipeName);
+            var response = IpcClient.SendMessage(stream, new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.StopTracing, payload));
+            switch ((DiagnosticsServerCommandId)response.Header.CommandId)
+            {
+                case DiagnosticsServerCommandId.OK:
+                    return;
+                case DiagnosticsServerCommandId.Error:
+                    var hr = BitConverter.ToInt32(response.Payload, 0);
+                    throw new ServerErrorException($"EventPipe session stop failed (HRESULT: 0x{hr:X8})");
+                default:
+                    throw new ServerErrorException($"EventPipe session stop failed - Server responded with unknown command");
+            }
         }
 
         /// <summary>

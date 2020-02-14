@@ -76,6 +76,13 @@ namespace Microsoft.Diagnostics.NETCore.Client
             }
         }
 
+        public static Stream GetTransport(string pipeName)
+        {
+            var namedPipeServer = new NamedPipeServerStream(pipeName, PipeDirection.InOut, 10);
+            namedPipeServer.WaitForConnection();
+            return namedPipeServer;
+        }
+
         /// <summary>
         /// Sends a single DiagnosticsIpc Message to the dotnet process with PID processId.
         /// </summary>
@@ -91,6 +98,12 @@ namespace Microsoft.Diagnostics.NETCore.Client
             }
         }
 
+        public static IpcMessage SendMessage(Stream stream, IpcMessage message)
+        {
+            Write(stream, message);
+            return Read(stream);
+        }
+
         /// <summary>
         /// Sends a single DiagnosticsIpc Message to the dotnet process with PID processId
         /// and returns the Stream for reuse in Optional Continuations.
@@ -102,6 +115,13 @@ namespace Microsoft.Diagnostics.NETCore.Client
         public static Stream SendMessage(int processId, IpcMessage message, out IpcMessage response)
         {
             var stream = GetTransport(processId);
+            Write(stream, message);
+            response = Read(stream);
+            return stream;
+        }
+
+        public static Stream SendMessage(Stream stream, IpcMessage message, out IpcMessage response)
+        {
             Write(stream, message);
             response = Read(stream);
             return stream;

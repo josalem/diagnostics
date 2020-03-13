@@ -25,9 +25,9 @@ namespace Microsoft.Diagnostics.NETCore.Client
             _transport = new IpcTransport(processId);
         }
 
-        public DiagnosticsClient(string transportPath)
+        public DiagnosticsClient(Stream transportStream)
         {
-            _transport = new IpcTransport(transportPath);
+            _transport = new IpcTransport(transportStream);
         }
 
         /// <summary>
@@ -42,6 +42,11 @@ namespace Microsoft.Diagnostics.NETCore.Client
         public EventPipeSession StartEventPipeSession(IEnumerable<EventPipeProvider> providers, bool requestRundown=true, int circularBufferMB=256)
         {
             return new EventPipeSession(_transport, providers, requestRundown, circularBufferMB);
+        }
+
+        public void StopEventPipeSession(EventPipeSession session)
+        {
+            EventPipeSession.Stop(session._sessionId, _transport);
         }
 
         /// <summary>

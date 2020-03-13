@@ -16,7 +16,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
 {
     internal class IpcTransport
     {
-        private string _ipcTransportPath = null;
+        private Stream _ipcTransportStream = null;
         private int? _pid = null;
 
         private static double ConnectTimeoutMilliseconds { get; } = TimeSpan.FromSeconds(3).TotalMilliseconds;
@@ -28,11 +28,11 @@ namespace Microsoft.Diagnostics.NETCore.Client
         /// by getting a reference to the Named Pipe or Socket
         /// specified in ipcTransportPath
         /// </summary>
-        /// <param name="ipcTransportPath">The fully qualified path, including filename, of the IPC Transport</param>
+        /// <param name="ipcTransportStream">The Stream representing a given transport</param>
         /// <returns>A reference to the IPC Transport</returns>
-        public IpcTransport(string ipcTransportPath)
+        internal IpcTransport(Stream ipcTransportStream)
         {
-            _ipcTransportPath = ipcTransportPath;
+            _ipcTransportStream = ipcTransportStream;
         }
 
         /// <summary>
@@ -52,9 +52,9 @@ namespace Microsoft.Diagnostics.NETCore.Client
         /// <returns>A Stream for writing and reading data to and from the target .NET process</returns>
         public Stream Connect()
         {
-            if (!string.IsNullOrEmpty(_ipcTransportPath))
+            if (_ipcTransportStream != null)
             {
-                return ConnectViaPath();
+                return ConnectViaStream();
             }
             else if (_pid.HasValue)
             {
@@ -66,24 +66,24 @@ namespace Microsoft.Diagnostics.NETCore.Client
             }
         }
 
-        private Stream ConnectViaPath()
+        private Stream ConnectViaStream()
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var normalizedPath = _ipcTransportPath.StartsWith(@"\\.\pipe\") ? _ipcTransportPath.Substring(9) : _ipcTransportPath;
-                var namedPipe = new NamedPipeClientStream(
-                    ".", normalizedPath, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.Impersonation);
-                namedPipe.Connect((int)ConnectTimeoutMilliseconds);
-                return namedPipe;
-            }
-            else
-            {
-                var remoteEP = CreateUnixDomainSocketEndPoint(_ipcTransportPath);
+            return _ipcTransportStream;
+            // if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            // {
+            //     var normalizedPath = _ipcTransportPath.StartsWith(@"\\.\pipe\") ? _ipcTransportPath.Substring(9) : _ipcTransportPath;
+            //     var namedPipeServer = new NamedPipeServerStream(normalizedPath, PipeDirection.InOut, 10);
+            //     namedPipeServer.WaitForConnection();
+            //     return namedPipeServer;
+            // }
+            // else
+            // {
+            //     var remoteEP = CreateUnixDomainSocketEndPoint(_ipcTransportPath);
 
-                var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-                socket.Connect(remoteEP);
-                return new NetworkStream(socket);
-            }
+            //     var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
+            //     socket.Connect(remoteEP);
+            //     return new NetworkStream(socket);
+            // }
         }
 
         private Stream ConnectViaPid()
@@ -136,7 +136,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
             }
         }
 
-        private static EndPoint CreateUnixDomainSocketEndPoint(string path)
+        internal static EndPoint CreateUnixDomainSocketEndPoint(string path)
         {
 #if NETCOREAPP
             return new UnixDomainSocketEndPoint(path);

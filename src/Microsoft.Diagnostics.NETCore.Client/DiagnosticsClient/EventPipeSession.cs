@@ -14,7 +14,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
         private IEnumerable<EventPipeProvider> _providers;
         private bool _requestRundown;
         private int _circularBufferMB;
-        private long _sessionId;
+        internal long _sessionId;
         private IpcTransport _transport;
         private bool disposedValue = false; // To detect redundant calls
 
@@ -52,6 +52,25 @@ namespace Microsoft.Diagnostics.NETCore.Client
 
             byte[] payload = BitConverter.GetBytes(_sessionId);
             var response = IpcClient.SendMessage(_transport, new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.StopTracing, payload));
+
+            switch ((DiagnosticsServerCommandId)response.Header.CommandId)
+            {
+                case DiagnosticsServerCommandId.OK:
+                    return;
+                case DiagnosticsServerCommandId.Error:
+                    var hr = BitConverter.ToInt32(response.Payload, 0);
+                    throw new ServerErrorException($"EventPipe session stop failed (HRESULT: 0x{hr:X8})");
+                default:
+                    throw new ServerErrorException($"EventPipe session stop failed - Server responded with unknown command");
+            }
+        }
+
+        internal static void Stop(long sessionId, IpcTransport transport)
+        {
+            Debug.Assert(sessionId > 0);
+
+            byte[] payload = BitConverter.GetBytes(sessionId);
+            var response = IpcClient.SendMessage(transport, new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.StopTracing, payload));
 
             switch ((DiagnosticsServerCommandId)response.Header.CommandId)
             {

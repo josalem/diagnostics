@@ -33,9 +33,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
             _ipcTransportAddress = ipcTransportAddress;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var normalizedPath = _ipcTransportAddress.StartsWith(@"\\.\pipe\") ? _ipcTransportAddress.Substring(9) : _ipcTransportAddress;
-                var namedPipeServer = new NamedPipeServerStream(normalizedPath, PipeDirection.InOut, 10);
-                _server = namedPipeServer;
+                _server = GetNewNamedPipeServer();
             }
             else
             {
@@ -59,11 +57,20 @@ namespace Microsoft.Diagnostics.NETCore.Client
                     Console.WriteLine("Accept");
                     return new NetworkStream(clientSocket);
                 case NamedPipeServerStream pipe:
+                    Console.WriteLine("Waiting for connection...");
                     pipe.WaitForConnection();
+                    Console.WriteLine("Got a connection!");
+                    _server = GetNewNamedPipeServer();
                     return pipe;
                 default:
                     throw new DiagnosticsClientException("Unable to listen on Diagnostics Agent Transport");
             };
+        }
+
+        private NamedPipeServerStream GetNewNamedPipeServer()
+        {
+            var normalizedPath = _ipcTransportAddress.StartsWith(@"\\.\pipe\") ? _ipcTransportAddress.Substring(9) : _ipcTransportAddress;
+            return new NamedPipeServerStream(normalizedPath, PipeDirection.InOut, 10);
         }
 
         #region IDisposable Support

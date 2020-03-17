@@ -96,6 +96,8 @@ namespace Microsoft.Diagnostics.NETCore.Client
                                 socket.Close(0);
                             }
                             socket.Dispose();
+                            if (File.Exists(_ipcTransportAddress))
+                                File.Delete(_ipcTransportAddress);
                             break;
                         case NamedPipeServerStream stream: stream.Dispose(); break;
                         default: break;

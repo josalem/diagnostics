@@ -47,7 +47,7 @@ namespace Microsoft.Diagnostics.Tools.Reverse
                 {
                     agent.OnDiagnosticsConnection += (sender, eventArgs) =>
                     {
-                        clientDict[eventArgs.ProcessId] = (eventArgs.ClrInstanceId, eventArgs.Client);
+                        clientDict[eventArgs.ClrInstanceId] = (eventArgs.ProcessId, eventArgs.Client);
                         Console.WriteLine($"== New Connection: instanceId: {eventArgs.ClrInstanceId}, ProcessId: {eventArgs.ProcessId}");
                     };
                     var serverTask = agent.Connect();
@@ -93,11 +93,11 @@ namespace Microsoft.Diagnostics.Tools.Reverse
         {
             Console.Write("Enter instance id to trace: ");
             string input = Console.ReadLine();
-            int pid = int.Parse(input);
-            if (clientDict.TryGetValue(pid, out var value))
+            int cookie = int.Parse(input);
+            if (clientDict.TryGetValue(cookie, out var value))
             {
                 Console.WriteLine("tracing!");
-                var (instanceId, client) = value;
+                var (pid, client) = value;
                 EventPipeSession session = client.StartEventPipeSession(new List<EventPipeProvider> { new EventPipeProvider("Microsoft-DotNETCore-SampleProfiler", EventLevel.Verbose) }, true);
                 Stream stream = session.EventStream;
                 var readTask = Task.Run(async () =>
@@ -111,11 +111,11 @@ namespace Microsoft.Diagnostics.Tools.Reverse
                         Console.WriteLine("Done Tracing");
                     }
                 });
-                sessionDict[pid] = (readTask, session);
+                sessionDict[cookie] = (readTask, session);
             }
             else
             {
-                Console.WriteLine("Invalid instance id");
+                Console.WriteLine("Invalid cookie");
             }
         }
 
@@ -123,11 +123,11 @@ namespace Microsoft.Diagnostics.Tools.Reverse
         {
             Console.Write("Enter instance id to stop: ");
             string input = Console.ReadLine();
-            int instanceId = int.Parse(input);
-            if (sessionDict.TryGetValue(instanceId, out var entry))
+            int cookie = int.Parse(input);
+            if (sessionDict.TryGetValue(cookie, out var entry))
             {
                 var (task, session) = entry;
-                var (pid, client) = clientDict[instanceId];
+                var (pid, client) = clientDict[cookie];
                 Console.WriteLine("Stopping");
                 client.StopEventPipeSession(session);
                 Console.WriteLine("Called stop");

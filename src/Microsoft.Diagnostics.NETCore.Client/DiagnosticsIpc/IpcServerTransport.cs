@@ -33,7 +33,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
             }
             else
             {
-                var remoteEP = IpcTransport.CreateUnixDomainSocketEndPoint(ipcTransportAddress);
+                var remoteEP = PidIpcEndpoint.CreateUnixDomainSocketEndPoint(ipcTransportAddress);
 
                 var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
                 socket.Bind(remoteEP);

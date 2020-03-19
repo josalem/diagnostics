@@ -18,16 +18,16 @@ namespace Microsoft.Diagnostics.NETCore.Client
     /// </summary>
     public sealed class DiagnosticsClient
     {
-        private IpcTransport _transport;
+        private IIpcEndpoint _endpoint;
 
         public DiagnosticsClient(int processId)
         {
-            _transport = new IpcTransport(processId);
+            _endpoint = new PidIpcEndpoint(processId);
         }
 
-        internal DiagnosticsClient(Stream transportStream)
+        internal DiagnosticsClient(IIpcEndpoint endpoint)
         {
-            _transport = new IpcTransport(transportStream);
+            _endpoint = endpoint;
         }
 
         /// <summary>
@@ -41,12 +41,12 @@ namespace Microsoft.Diagnostics.NETCore.Client
         /// </returns> 
         public EventPipeSession StartEventPipeSession(IEnumerable<EventPipeProvider> providers, bool requestRundown=true, int circularBufferMB=256)
         {
-            return new EventPipeSession(_transport, providers, requestRundown, circularBufferMB);
+            return new EventPipeSession(_endpoint, providers, requestRundown, circularBufferMB);
         }
 
         public void StopEventPipeSession(EventPipeSession session)
         {
-            EventPipeSession.Stop(session._sessionId, _transport);
+            EventPipeSession.Stop(session._sessionId, _endpoint);
         }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
 
             var payload = SerializeCoreDump(dumpPath, dumpType, logDumpGeneration);
             var message = new IpcMessage(DiagnosticsServerCommandSet.Dump, (byte)DumpCommandId.GenerateCoreDump, payload);
-            var response = IpcClient.SendMessage(_transport, message);
+            var response = IpcClient.SendMessage(_endpoint, message);
             var hr = 0;
             switch ((DiagnosticsServerCommandId)response.Header.CommandId)
             {
@@ -100,7 +100,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
 
             byte[] serializedConfiguration = SerializeProfilerAttach((uint)attachTimeout.TotalSeconds, profilerGuid, profilerPath, additionalData);
             var message = new IpcMessage(DiagnosticsServerCommandSet.Profiler, (byte)ProfilerCommandId.AttachProfiler, serializedConfiguration);
-            var response = IpcClient.SendMessage(_transport, message);
+            var response = IpcClient.SendMessage(_endpoint, message);
             switch ((DiagnosticsServerCommandId)response.Header.CommandId)
             {
                 case DiagnosticsServerCommandId.Error:
@@ -125,10 +125,10 @@ namespace Microsoft.Diagnostics.NETCore.Client
         /// </returns>
         public static IEnumerable<int> GetPublishedProcesses()
         {
-            return Directory.GetFiles(IpcTransport.IpcRootPath)
+            return Directory.GetFiles(PidIpcEndpoint.IpcRootPath)
                 .Select(namedPipe => (new FileInfo(namedPipe)).Name)
-                .Where(input => Regex.IsMatch(input, IpcTransport.DiagnosticsPortPattern))
-                .Select(input => int.Parse(Regex.Match(input, IpcTransport.DiagnosticsPortPattern).Groups[1].Value, NumberStyles.Integer))
+                .Where(input => Regex.IsMatch(input, PidIpcEndpoint.DiagnosticsPortPattern))
+                .Select(input => int.Parse(Regex.Match(input, PidIpcEndpoint.DiagnosticsPortPattern).Groups[1].Value, NumberStyles.Integer))
                 .Distinct();
         }
 

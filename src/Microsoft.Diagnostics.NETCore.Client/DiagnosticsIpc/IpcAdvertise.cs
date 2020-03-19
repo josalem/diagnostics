@@ -32,7 +32,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
 
         public byte[] Magic = Magic_V1;
         public UInt64 ProcessId;
-        public UInt16 ClrInstanceId;
+        public UInt16 RuntimeInstanceCookie;
 
         /// <summary>
         ///
@@ -44,7 +44,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
             var advertise = new IpcAdvertise()
             {
                 Magic = binaryReader.ReadBytes(Magic_V1.Length),
-                ClrInstanceId = binaryReader.ReadUInt16(),
+                RuntimeInstanceCookie = binaryReader.ReadUInt16(),
                 ProcessId = binaryReader.ReadUInt64()
             };
 
@@ -58,7 +58,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
 
         override public string ToString()
         {
-            return $"{{ Magic={Magic}; ClrInstanceId={ClrInstanceId}; ProcessId={ProcessId}; }}";
+            return $"{{ Magic={Magic}; ClrInstanceId={RuntimeInstanceCookie}; ProcessId={ProcessId}; }}";
         }
     }
 }

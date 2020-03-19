@@ -22,7 +22,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
         /// <param name="transport">The IPC transport of the dotnet process</param>
         /// <param name="message">The DiagnosticsIpc Message to be sent</param>
         /// <returns>The response DiagnosticsIpc Message from the dotnet process</returns>
-        public static IpcMessage SendMessage(IpcTransport transport, IpcMessage message)
+        public static IpcMessage SendMessage(IIpcEndpoint transport, IpcMessage message)
         {
             using (var stream = transport.Connect())
             {
@@ -39,7 +39,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
         /// <param name="message">The DiagnosticsIpc Message to be sent</param>
         /// <param name="response">out var for response message</param>
         /// <returns>The response DiagnosticsIpc Message from the dotnet process</returns>
-        public static Stream SendMessage(IpcTransport transport, IpcMessage message, out IpcMessage response)
+        public static Stream SendMessage(IIpcEndpoint transport, IpcMessage message, out IpcMessage response)
         {
             var stream = transport.Connect();
             Write(stream, message);

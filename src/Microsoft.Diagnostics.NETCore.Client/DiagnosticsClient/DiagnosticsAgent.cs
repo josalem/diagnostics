@@ -14,13 +14,14 @@ using System.IO.Pipes;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace Microsoft.Diagnostics.NETCore.Client
 {
     public sealed class DiagnosticsConnectionEventArgs : EventArgs
     {
         public int ProcessId { get; set; }
-        public int ClrInstanceId { get; set; }
+        public int RuntimeInstanceCookie { get; set; }
         public DiagnosticsClient Client { get; set; }
     }
 
@@ -31,6 +32,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
     {
         private IpcServerTransport _server;
         private CancellationTokenSource _cts;
+        private ConcurrentDictionary<int, (int, Stream)> _connectionDictionary = new ConcurrentDictionary<int, (int, Stream)>();
 
         /// <summary>
         /// </summary>
@@ -62,17 +64,20 @@ namespace Microsoft.Diagnostics.NETCore.Client
                     try
                     {
                         Stream connectionStream = _server.Listen();
-                        Console.WriteLine("Got a Connection");
                         IpcAdvertise advertise = IpcAdvertise.Parse(connectionStream);
-                        Console.WriteLine($"Parsed an advertise header {advertise}");
-                        var client = new DiagnosticsClient(connectionStream);
-                        var diagnosticsConnectionEventArgs = new DiagnosticsConnectionEventArgs()
+                        if (!_connectionDictionary.TryGetValue(advertise.RuntimeInstanceCookie, out var _))
                         {
-                            ProcessId = (int)advertise.ProcessId,
-                            ClrInstanceId = (int)advertise.ClrInstanceId,
-                            Client = client
-                        };
-                        OnRaiseDiagnosticsConnectionEvent(diagnosticsConnectionEventArgs);
+                            var client = new DiagnosticsClient(new AgentIpcEndpoint(this, advertise.RuntimeInstanceCookie));
+                            var diagnosticsConnectionEventArgs = new DiagnosticsConnectionEventArgs()
+                            {
+                                ProcessId = (int)advertise.ProcessId,
+                                RuntimeInstanceCookie = (int)advertise.RuntimeInstanceCookie,
+                                Client = client
+                            };
+                            OnRaiseDiagnosticsConnectionEvent(diagnosticsConnectionEventArgs);
+                        }
+
+                        _connectionDictionary[advertise.RuntimeInstanceCookie] = ((int)advertise.ProcessId, connectionStream);
                     }
                     catch
                     {
@@ -88,6 +93,19 @@ namespace Microsoft.Diagnostics.NETCore.Client
             catch (OperationCanceledException)
             {
                 // ignore cancellation
+            }
+        }
+
+        internal Stream GetStreamForCookie(int cookie)
+        {
+            if (_connectionDictionary.TryGetValue(cookie, out var entry))
+            {
+                var (_, stream) = entry;
+                return stream;
+            }
+            else
+            {
+                throw new DiagnosticsClientException("Failed to get stream for cookie");
             }
         }
 

@@ -47,8 +47,8 @@ namespace Microsoft.Diagnostics.Tools.Reverse
                 {
                     agent.OnDiagnosticsConnection += (sender, eventArgs) =>
                     {
-                        clientDict[eventArgs.ClrInstanceId] = (eventArgs.ProcessId, eventArgs.Client);
-                        Console.WriteLine($"== New Connection: instanceId: {eventArgs.ClrInstanceId}, ProcessId: {eventArgs.ProcessId}");
+                        clientDict[eventArgs.RuntimeInstanceCookie] = (eventArgs.ProcessId, eventArgs.Client);
+                        Console.WriteLine($"== New Connection: instanceId: {eventArgs.RuntimeInstanceCookie}, ProcessId: {eventArgs.ProcessId}");
                     };
                     var serverTask = agent.Connect();
 
@@ -129,7 +129,8 @@ namespace Microsoft.Diagnostics.Tools.Reverse
                 var (task, session) = entry;
                 var (pid, client) = clientDict[cookie];
                 Console.WriteLine("Stopping");
-                client.StopEventPipeSession(session);
+                // client.StopEventPipeSession(session);
+                session.Stop();
                 Console.WriteLine("Called stop");
                 await task;
                 Console.WriteLine("Stopped");

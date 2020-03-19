@@ -15,19 +15,19 @@ namespace Microsoft.Diagnostics.NETCore.Client
         private bool _requestRundown;
         private int _circularBufferMB;
         internal long _sessionId;
-        private IpcTransport _transport;
+        private IIpcEndpoint _endpoint;
         private bool disposedValue = false; // To detect redundant calls
 
-        internal EventPipeSession(IpcTransport transport, IEnumerable<EventPipeProvider> providers, bool requestRundown, int circularBufferMB)
+        internal EventPipeSession(IIpcEndpoint endpoint, IEnumerable<EventPipeProvider> providers, bool requestRundown, int circularBufferMB)
         {
-            _transport = transport;
+            _endpoint = endpoint;
             _providers = providers;
             _requestRundown = requestRundown;
             _circularBufferMB = circularBufferMB;
             
             var config = new EventPipeSessionConfiguration(circularBufferMB, EventPipeSerializationFormat.NetTrace, providers, requestRundown);
             var message = new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.CollectTracing2, config.SerializeV2());
-            EventStream = IpcClient.SendMessage(transport, message, out var response);
+            EventStream = IpcClient.SendMessage(endpoint, message, out var response);
             switch ((DiagnosticsServerCommandId)response.Header.CommandId)
             {
                 case DiagnosticsServerCommandId.OK:
@@ -51,7 +51,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
             Debug.Assert(_sessionId > 0);
 
             byte[] payload = BitConverter.GetBytes(_sessionId);
-            var response = IpcClient.SendMessage(_transport, new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.StopTracing, payload));
+            var response = IpcClient.SendMessage(_endpoint, new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.StopTracing, payload));
 
             switch ((DiagnosticsServerCommandId)response.Header.CommandId)
             {
@@ -65,12 +65,12 @@ namespace Microsoft.Diagnostics.NETCore.Client
             }
         }
 
-        internal static void Stop(long sessionId, IpcTransport transport)
+        internal static void Stop(long sessionId, IIpcEndpoint endpoint)
         {
             Debug.Assert(sessionId > 0);
 
             byte[] payload = BitConverter.GetBytes(sessionId);
-            var response = IpcClient.SendMessage(transport, new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.StopTracing, payload));
+            var response = IpcClient.SendMessage(endpoint, new IpcMessage(DiagnosticsServerCommandSet.EventPipe, (byte)EventPipeCommandId.StopTracing, payload));
 
             switch ((DiagnosticsServerCommandId)response.Header.CommandId)
             {

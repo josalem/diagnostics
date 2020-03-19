@@ -14,10 +14,28 @@ using System.Security.Principal;
 
 namespace Microsoft.Diagnostics.NETCore.Client
 {
-    internal class IpcTransport
+    internal interface IIpcEndpoint
     {
-        private Stream _ipcTransportStream = null;
-        private int? _pid = null;
+        Stream Connect();
+    }
+
+    internal class AgentIpcEndpoint : IIpcEndpoint
+    {
+        private DiagnosticsAgent _agent;
+        private int _runtimeInstanceCookie;
+
+        internal AgentIpcEndpoint(DiagnosticsAgent agent, int cookie)
+        {
+            _agent = agent;
+            _runtimeInstanceCookie = cookie;
+        }
+
+        public Stream Connect() => _agent.GetStreamForCookie(_runtimeInstanceCookie);
+    }
+
+    internal class PidIpcEndpoint : IIpcEndpoint
+    {
+        private int _pid;
 
         private static double ConnectTimeoutMilliseconds { get; } = TimeSpan.FromSeconds(3).TotalMilliseconds;
         public static string IpcRootPath { get; } = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"\\.\pipe\" : Path.GetTempPath();
@@ -25,23 +43,11 @@ namespace Microsoft.Diagnostics.NETCore.Client
 
         /// <summary>
         /// Creates a reference to a .NET process's IPC Transport
-        /// by getting a reference to the Named Pipe or Socket
-        /// specified in ipcTransportPath
-        /// </summary>
-        /// <param name="ipcTransportStream">The Stream representing a given transport</param>
-        /// <returns>A reference to the IPC Transport</returns>
-        internal IpcTransport(Stream ipcTransportStream)
-        {
-            _ipcTransportStream = ipcTransportStream;
-        }
-
-        /// <summary>
-        /// Creates a reference to a .NET process's IPC Transport
         /// using the default rules for a given pid
         /// </summary>
         /// <param name="pid">The pid of the target process</param>
         /// <returns>A reference to the IPC Transport</returns>
-        public IpcTransport(int pid)
+        public PidIpcEndpoint(int pid)
         {
             _pid = pid;
         }
@@ -52,44 +58,22 @@ namespace Microsoft.Diagnostics.NETCore.Client
         /// <returns>A Stream for writing and reading data to and from the target .NET process</returns>
         public Stream Connect()
         {
-            if (_ipcTransportStream != null)
-            {
-                return ConnectViaStream();
-            }
-            else if (_pid.HasValue)
-            {
-                return ConnectViaPid();
-            }
-            else
-            {
-                throw new ApplicationException("Cannot connect to Diagnostics IPC Transport without a PID or specific path");
-            }
-        }
-
-        private Stream ConnectViaStream()
-        {
-            return _ipcTransportStream;
-        }
-
-        private Stream ConnectViaPid()
-        {
-            Debug.Assert(_pid.HasValue);
             try
             {
-                var process = Process.GetProcessById(_pid.Value);
+                var process = Process.GetProcessById(_pid);
             }
             catch (System.ArgumentException)
             {
-                throw new ServerNotAvailableException($"Process {_pid.Value} is not running.");
+                throw new ServerNotAvailableException($"Process {_pid} is not running.");
             }
             catch (System.InvalidOperationException)
             {
-                throw new ServerNotAvailableException($"Process {_pid.Value} seems to be elevated.");
+                throw new ServerNotAvailableException($"Process {_pid} seems to be elevated.");
             }
  
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                string pipeName = $"dotnet-diagnostic-{_pid.Value}";
+                string pipeName = $"dotnet-diagnostic-{_pid}";
                 var namedPipe = new NamedPipeClientStream(
                     ".", pipeName, PipeDirection.InOut, PipeOptions.None, TokenImpersonationLevel.Impersonation);
                 namedPipe.Connect((int)ConnectTimeoutMilliseconds);
@@ -100,17 +84,17 @@ namespace Microsoft.Diagnostics.NETCore.Client
                 string ipcPort;
                 try
                 {
-                    ipcPort = Directory.GetFiles(IpcRootPath, $"dotnet-diagnostic-{_pid.Value}-*-socket") // Try best match.
+                    ipcPort = Directory.GetFiles(IpcRootPath, $"dotnet-diagnostic-{_pid}-*-socket") // Try best match.
                                 .OrderByDescending(f => new FileInfo(f).LastWriteTime)
                                 .FirstOrDefault();
                     if (ipcPort == null)
                     {
-                        throw new ServerNotAvailableException($"Process {_pid.Value} not running compatible .NET Core runtime.");
+                        throw new ServerNotAvailableException($"Process {_pid} not running compatible .NET Core runtime.");
                     }
                 }
                 catch (InvalidOperationException)
                 {
-                    throw new ServerNotAvailableException($"Process {_pid.Value} not running compatible .NET Core runtime.");
+                    throw new ServerNotAvailableException($"Process {_pid} not running compatible .NET Core runtime.");
                 }
                 string path = Path.Combine(IpcRootPath, ipcPort);
                 var remoteEP = CreateUnixDomainSocketEndPoint(path);

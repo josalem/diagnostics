@@ -25,7 +25,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
             _transport = new IpcTransport(processId);
         }
 
-        public DiagnosticsClient(Stream transportStream)
+        internal DiagnosticsClient(Stream transportStream)
         {
             _transport = new IpcTransport(transportStream);
         }

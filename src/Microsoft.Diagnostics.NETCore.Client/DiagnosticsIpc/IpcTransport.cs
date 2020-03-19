@@ -69,21 +69,6 @@ namespace Microsoft.Diagnostics.NETCore.Client
         private Stream ConnectViaStream()
         {
             return _ipcTransportStream;
-            // if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            // {
-            //     var normalizedPath = _ipcTransportPath.StartsWith(@"\\.\pipe\") ? _ipcTransportPath.Substring(9) : _ipcTransportPath;
-            //     var namedPipeServer = new NamedPipeServerStream(normalizedPath, PipeDirection.InOut, 10);
-            //     namedPipeServer.WaitForConnection();
-            //     return namedPipeServer;
-            // }
-            // else
-            // {
-            //     var remoteEP = CreateUnixDomainSocketEndPoint(_ipcTransportPath);
-
-            //     var socket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
-            //     socket.Connect(remoteEP);
-            //     return new NetworkStream(socket);
-            // }
         }
 
         private Stream ConnectViaPid()

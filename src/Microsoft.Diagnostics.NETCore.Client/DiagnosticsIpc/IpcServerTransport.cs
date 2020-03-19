@@ -3,14 +3,10 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
-using System.Linq;
-using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Security.Principal;
 
 namespace Microsoft.Diagnostics.NETCore.Client
 {
@@ -52,14 +48,10 @@ namespace Microsoft.Diagnostics.NETCore.Client
             switch (_server)
             {
                 case Socket socket: 
-                    Console.WriteLine("Accepting");
                     var clientSocket = socket.Accept();
-                    Console.WriteLine("Accept");
                     return new NetworkStream(clientSocket);
                 case NamedPipeServerStream pipe:
-                    Console.WriteLine("Waiting for connection...");
                     pipe.WaitForConnection();
-                    Console.WriteLine("Got a connection!");
                     _server = GetNewNamedPipeServer();
                     return pipe;
                 default:
@@ -73,7 +65,6 @@ namespace Microsoft.Diagnostics.NETCore.Client
             return new NamedPipeServerStream(normalizedPath, PipeDirection.InOut, 10);
         }
 
-        #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
         protected virtual void Dispose(bool disposing)
@@ -82,7 +73,6 @@ namespace Microsoft.Diagnostics.NETCore.Client
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects).
                     switch (_server)
                     {
                         case Socket socket:
@@ -103,20 +93,13 @@ namespace Microsoft.Diagnostics.NETCore.Client
                         default: break;
                     }
                 }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
                 disposedValue = true;
             }
         }
 
-        // This code added to correctly implement the disposable pattern.
         void IDisposable.Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
         }
-        #endregion
     }
 }

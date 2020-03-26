@@ -21,7 +21,7 @@ namespace Microsoft.Diagnostics.Tools.Reverse
 {
     internal static class CollectCommandHandler
     {
-        static ConcurrentDictionary<int, (Task, EventPipeSession)> sessionDict = new ConcurrentDictionary<int, (Task, EventPipeSession)>();
+        static ConcurrentDictionary<Guid, (Task, EventPipeSession)> sessionDict = new ConcurrentDictionary<Guid, (Task, EventPipeSession)>();
         delegate Task<int> CollectDelegate(CancellationToken ct, IConsole console, string transportPath, int processId, FileInfo output, uint buffersize, string providers, string profile, TraceFileFormat format, TimeSpan duration);
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace Microsoft.Diagnostics.Tools.Reverse
             DiagnosticsAgent agent = null;
             try
             {
-                var clientDict = new ConcurrentDictionary<int, (int, DiagnosticsClient)>();
+                var clientDict = new ConcurrentDictionary<Guid, (int, DiagnosticsClient)>();
                 using (agent = new DiagnosticsAgent(transportPath))
                 {
                     agent.OnDiagnosticsConnection += (sender, eventArgs) =>
@@ -83,17 +83,17 @@ namespace Microsoft.Diagnostics.Tools.Reverse
             return await Task.FromResult(0);
         }
 
-        private static void ListConnections(ConcurrentDictionary<int, (int, DiagnosticsClient)> clientDict)
+        private static void ListConnections(ConcurrentDictionary<Guid, (int, DiagnosticsClient)> clientDict)
         {
             foreach (var (instanceId, (pid, _)) in clientDict)
                 Console.WriteLine($"Connection: {{ InstanceId: {instanceId}, pid: {pid} }}");
         }
 
-        private static void TraceOnConnection(ConcurrentDictionary<int, (int, DiagnosticsClient)> clientDict)
+        private static void TraceOnConnection(ConcurrentDictionary<Guid, (int, DiagnosticsClient)> clientDict)
         {
             Console.Write("Enter instance id to trace: ");
             string input = Console.ReadLine();
-            int cookie = int.Parse(input);
+            Guid cookie = new Guid(input);
             if (clientDict.TryGetValue(cookie, out var value))
             {
                 Console.WriteLine("tracing!");
@@ -119,11 +119,11 @@ namespace Microsoft.Diagnostics.Tools.Reverse
             }
         }
 
-        private static async void StopTrace(ConcurrentDictionary<int, (int, DiagnosticsClient)> clientDict)
+        private static async void StopTrace(ConcurrentDictionary<Guid, (int, DiagnosticsClient)> clientDict)
         {
             Console.Write("Enter instance id to stop: ");
             string input = Console.ReadLine();
-            int cookie = int.Parse(input);
+            Guid cookie = new Guid(input);
             if (sessionDict.TryGetValue(cookie, out var entry))
             {
                 var (task, session) = entry;

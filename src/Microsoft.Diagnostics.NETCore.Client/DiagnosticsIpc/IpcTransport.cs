@@ -22,9 +22,9 @@ namespace Microsoft.Diagnostics.NETCore.Client
     internal class AgentIpcEndpoint : IIpcEndpoint
     {
         private DiagnosticsAgent _agent;
-        private int _runtimeInstanceCookie;
+        private Guid _runtimeInstanceCookie;
 
-        internal AgentIpcEndpoint(DiagnosticsAgent agent, int cookie)
+        internal AgentIpcEndpoint(DiagnosticsAgent agent, Guid cookie)
         {
             _agent = agent;
             _runtimeInstanceCookie = cookie;

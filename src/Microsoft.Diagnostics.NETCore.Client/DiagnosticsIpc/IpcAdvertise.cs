@@ -19,20 +19,20 @@ namespace Microsoft.Diagnostics.NETCore.Client
      * IS STANDARD DIAGNOSTICS IPC PROTOCOL COMMUNICATION.
      * 
      * The flow for Advertise is a one-way burst of 24 bytes consisting of
-     * 6 bytes - "AD_V1\0" (ASCII chars + null byte)
-     * 4 bytes - CLR Instance ID (little-endian)
-     * 8 bytes - PID (little-endian)
+     * 8 bytes  - "ADVR_V1\0" (ASCII chars + null byte)
+     * 16 bytes - CLR Instance Cookie (little-endian)
+     * 8 bytes  - PID (little-endian)
      */
 
     internal class IpcAdvertise
     {
-        public static int Size_V1 => 18;
-        public static byte[] Magic_V1 => Encoding.ASCII.GetBytes("AD_V1" + '\0');
-        public static int MagicSize_V1 => 6;
+        public static int Size_V1 => 32;
+        public static byte[] Magic_V1 => Encoding.ASCII.GetBytes("ADVR_V1" + '\0');
+        public static int MagicSize_V1 => 8;
 
         public byte[] Magic = Magic_V1;
         public UInt64 ProcessId;
-        public UInt16 RuntimeInstanceCookie;
+        public Guid RuntimeInstanceCookie;
 
         /// <summary>
         ///
@@ -44,7 +44,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
             var advertise = new IpcAdvertise()
             {
                 Magic = binaryReader.ReadBytes(Magic_V1.Length),
-                RuntimeInstanceCookie = binaryReader.ReadUInt16(),
+                RuntimeInstanceCookie = new Guid(binaryReader.ReadBytes(16)),
                 ProcessId = binaryReader.ReadUInt64()
             };
 

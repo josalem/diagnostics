@@ -21,7 +21,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
     public sealed class DiagnosticsConnectionEventArgs : EventArgs
     {
         public int ProcessId { get; set; }
-        public int RuntimeInstanceCookie { get; set; }
+        public Guid RuntimeInstanceCookie { get; set; }
         public DiagnosticsClient Client { get; set; }
     }
 
@@ -32,7 +32,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
     {
         private IpcServerTransport _server;
         private CancellationTokenSource _cts;
-        private ConcurrentDictionary<int, (int, Stream)> _connectionDictionary = new ConcurrentDictionary<int, (int, Stream)>();
+        private ConcurrentDictionary<Guid, (int, Stream)> _connectionDictionary = new ConcurrentDictionary<Guid, (int, Stream)>();
 
         /// <summary>
         /// </summary>
@@ -71,7 +71,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
                             var diagnosticsConnectionEventArgs = new DiagnosticsConnectionEventArgs()
                             {
                                 ProcessId = (int)advertise.ProcessId,
-                                RuntimeInstanceCookie = (int)advertise.RuntimeInstanceCookie,
+                                RuntimeInstanceCookie = advertise.RuntimeInstanceCookie,
                                 Client = client
                             };
                             OnRaiseDiagnosticsConnectionEvent(diagnosticsConnectionEventArgs);
@@ -96,7 +96,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
             }
         }
 
-        internal Stream GetStreamForCookie(int cookie)
+        internal Stream GetStreamForCookie(Guid cookie)
         {
             if (_connectionDictionary.TryGetValue(cookie, out var entry))
             {

@@ -116,8 +116,25 @@ namespace Microsoft.Diagnostics.NETCore.Client
 
         public void Dispose()
         {
+            OnDiagnosticsConnection = null;
             ((IDisposable)_server).Dispose();
             ((IDisposable)_cts).Dispose();
+            foreach (var (pid, stream) in _connectionDictionary.Values)
+            {
+                switch (stream)
+                {
+                    case NamedPipeServerStream serverStream:
+                        serverStream.Disconnect();
+                        serverStream.Dispose();
+                        break;
+                    case NetworkStream networkStream:
+                        networkStream.Close();
+                        networkStream.Dispose();
+                        break;
+                    default:
+                        throw new Exception("asdfasdf");
+                }
+            }
         }
 
         protected virtual void OnRaiseDiagnosticsConnectionEvent(DiagnosticsConnectionEventArgs e)

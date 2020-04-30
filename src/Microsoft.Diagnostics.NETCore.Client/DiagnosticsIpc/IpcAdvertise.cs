@@ -22,17 +22,20 @@ namespace Microsoft.Diagnostics.NETCore.Client
      * 8 bytes  - "ADVR_V1\0" (ASCII chars + null byte)
      * 16 bytes - CLR Instance Cookie (little-endian)
      * 8 bytes  - PID (little-endian)
+     * 2 bytes  - future
      */
 
     internal class IpcAdvertise
     {
-        public static int Size_V1 => 32;
+        public static int Size_V1 => 34;
         public static byte[] Magic_V1 => Encoding.ASCII.GetBytes("ADVR_V1" + '\0');
         public static int MagicSize_V1 => 8;
 
         public byte[] Magic = Magic_V1;
         public UInt64 ProcessId;
         public Guid RuntimeInstanceCookie;
+
+        private UInt16 Future;
 
         /// <summary>
         ///
@@ -45,7 +48,8 @@ namespace Microsoft.Diagnostics.NETCore.Client
             {
                 Magic = binaryReader.ReadBytes(Magic_V1.Length),
                 RuntimeInstanceCookie = new Guid(binaryReader.ReadBytes(16)),
-                ProcessId = binaryReader.ReadUInt64()
+                ProcessId = binaryReader.ReadUInt64(),
+                Future = binaryReader.ReadUInt16()
             };
 
             for (int i = 0; i < Magic_V1.Length; i++)
@@ -58,7 +62,7 @@ namespace Microsoft.Diagnostics.NETCore.Client
 
         override public string ToString()
         {
-            return $"{{ Magic={Magic}; ClrInstanceId={RuntimeInstanceCookie}; ProcessId={ProcessId}; }}";
+            return $"{{ Magic={Magic}; ClrInstanceId={RuntimeInstanceCookie}; ProcessId={ProcessId}; Future={Future}; }}";
         }
     }
 }

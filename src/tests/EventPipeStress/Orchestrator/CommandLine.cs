@@ -1,7 +1,12 @@
+// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
 using Common;
 using System;
 using System.CommandLine;
 using System.CommandLine.Parsing;
+using System.IO;
 
 namespace Orchestrator
 {
@@ -18,6 +23,12 @@ namespace Orchestrator
                 alias: "--pause",
                 getDefaultValue: () => false,
                 description: "Should the orchestrator pause before starting each test phase for a debugger to attach?");
+
+        static public Option<bool> ProfileOption = 
+            new Option<bool>(
+                alias: "--profile",
+                getDefaultValue: () => false,
+                description: "Should the orchestrator profile the subprocess? Uses ETW on Windows and Perf on Linux. Places a trace for each iteration in a new directory in the directory the tool is run from.");
 
         static public Option<bool> RundownOption = 
             new Option<bool>(

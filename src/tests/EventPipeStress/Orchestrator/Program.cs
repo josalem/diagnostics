@@ -1,4 +1,8 @@
-﻿using System;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+// See the LICENSE file in the project root for more information.
+
+using System;
 using System.Diagnostics;
 using System.Diagnostics.Tracing;
 using System.IO;
@@ -43,7 +47,8 @@ namespace Orchestrator
             bool rundown,
             int bufferSize,
             int iterations,
-            bool pause);
+            bool pause,
+            bool profile);
 
         // TODO: Collect CPU % of reader and writer while running test and add to stats
         // TODO: Standardize and clean up logging from orchestrator and corescaletest
@@ -94,7 +99,8 @@ namespace Orchestrator
                 OrchestrateCommandLine.RundownOption,
                 OrchestrateCommandLine.BufferSizeOption,
                 OrchestrateCommandLine.IterationsOption,
-                OrchestrateCommandLine.PauseOption
+                OrchestrateCommandLine.PauseOption,
+                OrchestrateCommandLine.ProfileOption
             };
 
 
@@ -207,13 +213,18 @@ namespace Orchestrator
             bool rundown,
             int bufferSize,
             int iterations,
-            bool pause)
+            bool pause,
+            bool profile)
         {
             if (!stressPath.Exists)
             {
                 Console.WriteLine($"");
                 return -1;
             }
+
+            Profiler profiler = profile ?
+                new Profiler(eventSize, eventRate, burstPattern, readerType, slowReader, duration, cores, threads, eventCount, rundown, bufferSize, iterations) :
+                null;
 
             string readerTypeString = readerType switch
             {
@@ -275,6 +286,9 @@ namespace Orchestrator
                     Console.ReadLine();
                 }
 
+                // collect CPU samples for the test run
+                using ProfilerSession session = profiler?.Profile(iteration) ?? new NullProfilerSession("");
+
                 // start the target process
                 StreamWriter writer = eventWritingProc.StandardInput;
                 writer.WriteLine("\r\n");
@@ -290,6 +304,8 @@ namespace Orchestrator
 
             Console.WriteLine(testResults.GenerateSummary());
             Console.WriteLine(testResults.GenerateStatisticsTable());
+
+            profiler?.SaveExecutionSummary(testResults);
 
             return 0;
         }

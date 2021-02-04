@@ -33,6 +33,7 @@ Options:
   --buffer-size <buffer-size>                     The size of the buffer requested in the EventPipe session [default: 256]
   --iterations <iterations>                       The number of times to run the test. [default: 1]
   --pause                                         Should the orchestrator pause before starting each test phase for a debugger to attach? [default: False]
+  --profile                                       Should the orchestrator profile the subprocess? Uses ETW on Windows and Perf on Linux. Places a trace for each iteration in a new directory in the directory the tool is run from. [default: False]
   --version                                       Show version information
   -?, -h, --help                                  Show help and usage information
 ```

@@ -103,13 +103,14 @@ namespace Stress
             }
 
             if (eventCount != -1)
-                Console.WriteLine($"SUBPROCESSS :: Sleeping for {durationTimeSpan.TotalSeconds} seconds or until {eventCount} events have been sent on each thread, whichever happens first");
+                Console.WriteLine($"SUBPROCESS :: Sleeping for {durationTimeSpan.TotalSeconds} seconds or until {eventCount} events have been sent on each thread, whichever happens first");
             else
-                Console.WriteLine($"SUBPROCESSS :: Sleeping for {durationTimeSpan.TotalSeconds} seconds");
+                Console.WriteLine($"SUBPROCESS :: Sleeping for {durationTimeSpan.TotalSeconds} seconds");
 
             if (recycle > 0)
             {
                 // TODO: make recycle and eventcount mutually exclusive
+                var totalThreadCount = threads;
                 var durationTask = Task.Delay(durationTimeSpan);
                 while (!durationTask.IsCompleted)
                 {
@@ -129,6 +130,8 @@ namespace Stress
                         tcsArray[i] = tcs;
                         threadArray[i].Start();
                     }
+                    totalThreadCount += threads;
+                    Console.WriteLine($"SUBPROCESS :: Recycling all threads. True total count is {totalThreadCount}");
                 }
 
                 finished = true;

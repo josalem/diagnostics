@@ -41,7 +41,7 @@ namespace Common
                     return _recycleOption;
 
                 _recycleOption = new Option<int>(
-                                    alias: "--scale",
+                                    alias: "--recycle",
                                     getDefaultValue: () => -1,
                                     description: "The rate in seconds second at which to recycle all the threads writing events. -1 (the default) means no recycling."
                 );

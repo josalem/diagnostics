@@ -48,7 +48,7 @@ namespace Stress
                 return () => { while (!finished) { burst(); } };
         }
 
-        private delegate Task<int> RootCommandHandler(IConsole console, CancellationToken ct, int eventSize, int eventRate, BurstPattern burstPattern, int threads, int duration, int eventCount);
+        private delegate Task<int> RootCommandHandler(IConsole console, CancellationToken ct, int eventSize, int eventRate, BurstPattern burstPattern, int threads, int duration, int eventCount, int recycle);
 
         private static CommandLineBuilder BuildCommandLine()
         {
@@ -59,7 +59,8 @@ namespace Stress
                 CommandLineOptions.BurstPatternOption,
                 CommandLineOptions.DurationOption,
                 CommandLineOptions.ThreadsOption,
-                CommandLineOptions.EventCountOption
+                CommandLineOptions.EventCountOption,
+                CommandLineOptions.RecycleOption
             };
 
 
@@ -75,7 +76,7 @@ namespace Stress
                 .InvokeAsync(args);
         }
 
-        private static async Task<int> Run(IConsole console, CancellationToken ct, int eventSize, int eventRate, BurstPattern burstPattern, int threads, int duration, int eventCount)
+        private static async Task<int> Run(IConsole console, CancellationToken ct, int eventSize, int eventRate, BurstPattern burstPattern, int threads, int duration, int eventCount, int recycle)
         {
             TimeSpan durationTimeSpan = TimeSpan.FromSeconds(duration);
 
@@ -93,24 +94,54 @@ namespace Stress
                 tcsArray[i] = tcs;
             }
 
-            Console.WriteLine($"SUBPROCESSS :: Running - Threads: {threads}, EventSize: {eventSize * sizeof(char):N} bytes, EventCount: {(eventCount == -1 ? -1 : eventCount * threads)}, EventRate: {(eventRate == -1 ? -1 : eventRate * threads)} events/sec, duration: {durationTimeSpan.TotalSeconds}s");
+            Console.WriteLine($"SUBPROCESS :: Running - Threads: {threads}, EventSize: {eventSize * sizeof(char):N} bytes, EventCount: {(eventCount == -1 ? -1 : eventCount * threads)}, EventRate: {(eventRate == -1 ? -1 : eventRate * threads)} events/sec, duration: {durationTimeSpan.TotalSeconds}s, recycle: {recycle}");
             Console.ReadLine();
 
             for (int i = 0; i < threads; i++)
             {
                 threadArray[i].Start();
             }
-            
+
             if (eventCount != -1)
                 Console.WriteLine($"SUBPROCESSS :: Sleeping for {durationTimeSpan.TotalSeconds} seconds or until {eventCount} events have been sent on each thread, whichever happens first");
             else
                 Console.WriteLine($"SUBPROCESSS :: Sleeping for {durationTimeSpan.TotalSeconds} seconds");
 
-            Task threadCompletionTask = Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
-            Task result = await Task.WhenAny(Task.Delay(durationTimeSpan), threadCompletionTask);
-            finished = true;
+            if (recycle > 0)
+            {
+                // TODO: make recycle and eventcount mutually exclusive
+                var durationTask = Task.Delay(durationTimeSpan);
+                while (!durationTask.IsCompleted)
+                {
+                    // wait recycle seconds
+                    await Task.Delay(TimeSpan.FromSeconds(recycle));
 
-            await threadCompletionTask;
+                    // tell all the threads to stop writing events
+                    finished = true;
+                    await Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
+
+                    // recreate the threads and the tcs array
+                    finished = false;
+                    for (int i = 0; i < threads; i++)
+                    {
+                        var tcs = new TaskCompletionSource<bool>();
+                        threadArray[i] = new Thread(() => { threadProc(); tcs.TrySetResult(true); });
+                        tcsArray[i] = tcs;
+                        threadArray[i].Start();
+                    }
+                }
+
+                finished = true;
+                await Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
+            }
+            else
+            {
+                Task threadCompletionTask = Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
+                Task result = await Task.WhenAny(Task.Delay(durationTimeSpan), threadCompletionTask);
+                finished = true;
+                await threadCompletionTask;
+            }
+
             Console.WriteLine("SUBPROCESSS :: Done. Goodbye!");
             return 0;
         }

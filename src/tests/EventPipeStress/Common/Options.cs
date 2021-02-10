@@ -32,6 +32,24 @@ namespace Common
             return null;
         };
 
+        static private Option<int> _recycleOption = null;
+        static public Option<int> RecycleOption
+        {
+            get
+            {
+                if (_recycleOption is not null)
+                    return _recycleOption;
+
+                _recycleOption = new Option<int>(
+                                    alias: "--scale",
+                                    getDefaultValue: () => -1,
+                                    description: "The rate in seconds second at which to recycle all the threads writing events. -1 (the default) means no recycling."
+                );
+                _recycleOption.AddValidator(MustBeNegOneOrPositiveValidator);
+                return _recycleOption;
+            }
+        }
+
         static private Option<int> _eventSizeOption = null;
         static public Option<int> EventSizeOption 
         {

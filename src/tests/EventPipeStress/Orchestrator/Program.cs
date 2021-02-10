@@ -48,7 +48,8 @@ namespace Orchestrator
             int bufferSize,
             int iterations,
             bool pause,
-            bool profile);
+            bool profile,
+            int recycle);
 
         // TODO: Collect CPU % of reader and writer while running test and add to stats
         // TODO: Standardize and clean up logging from orchestrator and corescaletest
@@ -100,7 +101,8 @@ namespace Orchestrator
                 OrchestrateCommandLine.BufferSizeOption,
                 OrchestrateCommandLine.IterationsOption,
                 OrchestrateCommandLine.PauseOption,
-                OrchestrateCommandLine.ProfileOption
+                OrchestrateCommandLine.ProfileOption,
+                CommandLineOptions.RecycleOption
             };
 
 
@@ -214,7 +216,8 @@ namespace Orchestrator
             int bufferSize,
             int iterations,
             bool pause,
-            bool profile)
+            bool profile,
+            int recycle)
         {
             if (!stressPath.Exists)
             {
@@ -246,7 +249,7 @@ namespace Orchestrator
             if (eventRate == -1 && burstPattern != BurstPattern.NONE)
                 throw new ArgumentException("Must have burst pattern of NONE if rate is -1");
 
-            Console.WriteLine($"Configuration: event_size={eventSize}, event_rate={eventRate}, cores={cores}, num_threads={threads}, reader={readerType}, event_rate={(eventRate == -1 ? -1 : eventRate * threads)}, burst_pattern={burstPattern.ToString()}, slow_reader={slowReader}, duration={duration}");
+            Console.WriteLine($"Configuration: event_size={eventSize}, event_rate={eventRate}, cores={cores}, num_threads={threads}, reader={readerType}, event_rate={(eventRate == -1 ? -1 : eventRate * threads)}, burst_pattern={burstPattern.ToString()}, slow_reader={slowReader}, duration={duration}, recycle={recycle}");
 
             for (int iteration = 0; iteration < iterations; iteration++)
             {
@@ -255,7 +258,7 @@ namespace Orchestrator
 
                 Process eventWritingProc = new Process();
                 eventWritingProc.StartInfo.FileName = stressPath.FullName;
-                eventWritingProc.StartInfo.Arguments = $"--threads {(threads == -1 ? cores.ToString() : threads.ToString())} --event-count {eventCount} --event-size {eventSize} --event-rate {eventRate} --burst-pattern {burstPattern} --duration {(int)durationTimeSpan.TotalSeconds}";
+                eventWritingProc.StartInfo.Arguments = $"--threads {(threads == -1 ? cores.ToString() : threads.ToString())} --event-count {eventCount} --event-size {eventSize} --event-rate {eventRate} --burst-pattern {burstPattern} --duration {(int)durationTimeSpan.TotalSeconds} --recycle {recycle}";
                 eventWritingProc.StartInfo.UseShellExecute = false;
                 eventWritingProc.StartInfo.RedirectStandardInput = true;
                 eventWritingProc.StartInfo.Environment["COMPlus_StressLog"] = "1";

@@ -1,3 +1,0 @@
-josalem@DESKTOP-62QAK4R.redmond.corp.microsoft.com /Users/josalem/git/diagnostics/src/Tools/dotnet-trace
-[Fri Nov 20 15:22:24 PST 2020] $ dotnet run -p dotnet-trace.csproj -c Debug --no-restore --no-build -- [debug] convert --format speedscope /Users/josalem/Downloads/nettrace/trace.nettrace -o ./post.speedscope.json
-Attach your debugger to process 95373 (dotnet).

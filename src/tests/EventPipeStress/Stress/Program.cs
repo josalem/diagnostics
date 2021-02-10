@@ -109,6 +109,7 @@ namespace Stress
 
             if (recycle > 0)
             {
+                var trueThreadTotal = threads;
                 // TODO: make recycle and eventcount mutually exclusive
                 var durationTask = Task.Delay(durationTimeSpan);
                 while (!durationTask.IsCompleted)
@@ -129,6 +130,8 @@ namespace Stress
                         tcsArray[i] = tcs;
                         threadArray[i].Start();
                     }
+                    trueThreadTotal += threads;
+                    Console.WriteLine($"SUBPROCESS :: recycling all threads. True thread count is now {trueThreadTotal}");
                 }
 
                 finished = true;

@@ -141,7 +141,7 @@ namespace Stress
                 // await Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
 
                 totalThreadCount = 0;
-                eventCount = recycle; // limit each thread to recycle events
+                threadProc = makeThreadProc(recycle); // limit each thread to recycle events
                 while (!durationTask.IsCompleted)
                 {
                     var t = new Thread(() => threadProc());

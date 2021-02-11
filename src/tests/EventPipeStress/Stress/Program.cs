@@ -97,9 +97,12 @@ namespace Stress
             Console.WriteLine($"SUBPROCESS :: Running - Threads: {threads}, EventSize: {eventSize * sizeof(char):N} bytes, EventCount: {(eventCount == -1 ? -1 : eventCount * threads)}, EventRate: {(eventRate == -1 ? -1 : eventRate * threads)} events/sec, duration: {durationTimeSpan.TotalSeconds}s, recycle: {recycle}");
             Console.ReadLine();
 
-            for (int i = 0; i < threads; i++)
+            if (recycle == -1)
             {
-                threadArray[i].Start();
+                for (int i = 0; i < threads; i++)
+                {
+                    threadArray[i].Start();
+                }
             }
 
             if (eventCount != -1)
@@ -112,30 +115,42 @@ namespace Stress
                 // TODO: make recycle and eventcount mutually exclusive
                 var totalThreadCount = threads;
                 var durationTask = Task.Delay(durationTimeSpan);
+                // while (!durationTask.IsCompleted)
+                // {
+                //     // wait recycle seconds
+                //     await Task.Delay(TimeSpan.FromSeconds(recycle));
+
+                //     // tell all the threads to stop writing events
+                //     finished = true;
+                //     await Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
+
+                //     // recreate the threads and the tcs array
+                //     finished = false;
+                //     for (int i = 0; i < threads; i++)
+                //     {
+                //         var tcs = new TaskCompletionSource<bool>();
+                //         threadArray[i] = new Thread(() => { threadProc(); tcs.TrySetResult(true); });
+                //         tcsArray[i] = tcs;
+                //         threadArray[i].Start();
+                //     }
+                //     totalThreadCount += threads;
+                //     Console.WriteLine($"SUBPROCESS :: Recycling all threads. True total count is {totalThreadCount}");
+                // }
+
+                // finished = true;
+                // await Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
+
+                totalThreadCount = 0;
+                eventCount = recycle; // limit each thread to recycle events
                 while (!durationTask.IsCompleted)
                 {
-                    // wait recycle seconds
-                    await Task.Delay(TimeSpan.FromSeconds(recycle));
-
-                    // tell all the threads to stop writing events
-                    finished = true;
-                    await Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
-
-                    // recreate the threads and the tcs array
-                    finished = false;
-                    for (int i = 0; i < threads; i++)
-                    {
-                        var tcs = new TaskCompletionSource<bool>();
-                        threadArray[i] = new Thread(() => { threadProc(); tcs.TrySetResult(true); });
-                        tcsArray[i] = tcs;
-                        threadArray[i].Start();
-                    }
-                    totalThreadCount += threads;
-                    Console.WriteLine($"SUBPROCESS :: Recycling all threads. True total count is {totalThreadCount}");
+                    var t = new Thread(() => threadProc());
+                    t.Start();
+                    t.Join();
+                    totalThreadCount++;
+                    if (totalThreadCount % 1000 == 0)
+                        Console.WriteLine($"SUBPROCESS :: total threads {totalThreadCount}");
                 }
-
-                finished = true;
-                await Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
             }
             else
             {

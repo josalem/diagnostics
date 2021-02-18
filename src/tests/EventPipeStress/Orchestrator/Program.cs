@@ -178,24 +178,33 @@ namespace Orchestrator
                 var totalTimeSw = new Stopwatch();
                 string fileName = $"./{Path.GetRandomFileName()}.nettrace";
 
-                EventPipeSession session = GetSession(pid, rundown, bufferSize);
-                Console.WriteLine("Session created.");
-
-                using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+                try
                 {
-                    totalTimeSw.Start();
-                    session.EventStream.CopyTo(fs);
-                    totalTimeSw.Stop();
-                }
-                EventPipeEventSource epes = new EventPipeEventSource(fileName);
-                epes.Dynamic.All += (TraceEvent data) => {
-                    eventsRead += 1;
-                };
-                epes.Process();
-                Console.WriteLine("Read total: " + eventsRead.ToString());
-                Console.WriteLine("Dropped total: " + epes.EventsLost.ToString());
+                    EventPipeSession session = GetSession(pid, rundown, bufferSize);
+                    Console.WriteLine("Session created.");
 
-                return new TestResult(eventsRead, epes.EventsLost, totalTimeSw.Elapsed);
+                    using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+                    {
+                        totalTimeSw.Start();
+                        session.EventStream.CopyTo(fs);
+                        totalTimeSw.Stop();
+                    }
+                    EventPipeEventSource epes = new EventPipeEventSource(fileName);
+                    epes.Dynamic.All += (TraceEvent data) => {
+                        eventsRead += 1;
+                    };
+                    epes.Process();
+                    Console.WriteLine("Read total: " + eventsRead.ToString());
+                    Console.WriteLine("Dropped total: " + epes.EventsLost.ToString());
+
+                    return new TestResult(eventsRead, epes.EventsLost, totalTimeSw.Elapsed);
+                }
+                finally
+                {
+                    if (File.Exists(fileName))
+                        File.Delete(fileName);
+                }
+
             };
         }
 

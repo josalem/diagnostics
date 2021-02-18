@@ -176,7 +176,7 @@ namespace Orchestrator
             {
                 int eventsRead = 0;
                 var totalTimeSw = new Stopwatch();
-                const string fileName = "./temp.nettrace";
+                string fileName = $"./{Path.GetRandomFileName()}.nettrace";
 
                 EventPipeSession session = GetSession(pid, rundown, bufferSize);
                 Console.WriteLine("Session created.");

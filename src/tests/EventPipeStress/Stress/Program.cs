@@ -30,12 +30,12 @@ namespace Stress
     class Program
     {
         private static bool finished = false;
-        private static int eventRate = -1;
-        private static BurstPattern burstPattern = BurstPattern.NONE;
+        private static int s_eventRate = -1;
+        private static BurstPattern s_burstPattern = BurstPattern.NONE;
         private static Action threadProc = null;
         private static Action makeThreadProc(int eventCount)
         {
-            Func<long> burst = BurstPatternMethods.Burst(burstPattern, eventRate, MySource.Log.FireEvent, BurstPatternMethods.BusySleepAction);
+            Func<long> burst = BurstPatternMethods.Burst(s_burstPattern, s_eventRate, MySource.Log.FireEvent, BurstPatternMethods.BusySleepAction);
             if (eventCount != -1)
             {
                 return () => { 
@@ -81,6 +81,9 @@ namespace Stress
             TimeSpan durationTimeSpan = TimeSpan.FromSeconds(duration);
 
             MySource.s_Payload = new String('a', eventSize);
+
+            s_burstPattern = burstPattern;
+            s_eventRate = eventRate;
 
             threadProc = makeThreadProc(eventCount);
 

@@ -305,6 +305,7 @@ namespace Orchestrator
                 StreamWriter writer = eventWritingProc.StandardInput;
                 writer.WriteLine("\r\n");
                 eventWritingProc.WaitForExit();
+                Console.WriteLine($"subprocess has exited with exit code {eventWritingProc.ExitCode}");
 
                 var resultTuple = await listenerTask;
                 testResults.Add(resultTuple);

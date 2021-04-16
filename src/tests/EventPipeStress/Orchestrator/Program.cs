@@ -186,7 +186,7 @@ namespace Orchestrator
                     using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
                     {
                         totalTimeSw.Start();
-                        session.EventStream.CopyTo(fs, 5 * 1024 * 1024);
+                        session.EventStream.CopyTo(fs);
                         totalTimeSw.Stop();
                     }
                     EventPipeEventSource epes = new EventPipeEventSource(fileName);
@@ -309,6 +309,7 @@ namespace Orchestrator
                 StreamWriter writer = eventWritingProc.StandardInput;
                 writer.WriteLine("\r\n");
                 eventWritingProc.WaitForExit();
+                Console.WriteLine($"subprocess has exited with exit code {eventWritingProc.ExitCode}");
 
                 var resultTuple = await listenerTask;
                 testResults.Add(resultTuple);

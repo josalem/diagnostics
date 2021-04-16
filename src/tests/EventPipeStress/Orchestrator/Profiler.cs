@@ -104,7 +104,7 @@ namespace Orchestrator
             int iterations)
         {
             // TODO: error if already exists...
-            profileDirectory = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, $"EventPipeProfiles_{DateTime.Now.ToString("YYYY_MM_dd_hhmm")}"));
+            profileDirectory = Directory.CreateDirectory(Path.Join(Environment.CurrentDirectory, $"EventPipeProfiles_{DateTime.Now.ToString("yyyy_MM_dd_hhmm")}"));
             
             // write summary of experiment
             var sb = new StringBuilder();

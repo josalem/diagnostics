@@ -176,26 +176,39 @@ namespace Orchestrator
             {
                 int eventsRead = 0;
                 var totalTimeSw = new Stopwatch();
-                const string fileName = "./temp.nettrace";
+                string fileName = $"./{Path.GetRandomFileName()}.nettrace";
 
-                EventPipeSession session = GetSession(pid, rundown, bufferSize);
-                Console.WriteLine("Session created.");
-
-                using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+                try
                 {
-                    totalTimeSw.Start();
-                    session.EventStream.CopyTo(fs);
-                    totalTimeSw.Stop();
-                }
-                EventPipeEventSource epes = new EventPipeEventSource(fileName);
-                epes.Dynamic.All += (TraceEvent data) => {
-                    eventsRead += 1;
-                };
-                epes.Process();
-                Console.WriteLine("Read total: " + eventsRead.ToString());
-                Console.WriteLine("Dropped total: " + epes.EventsLost.ToString());
+                    EventPipeSession session = GetSession(pid, rundown, bufferSize);
+                    Console.WriteLine("Session created.");
 
-                return new TestResult(eventsRead, epes.EventsLost, totalTimeSw.Elapsed);
+                    using (FileStream fs = new FileStream(fileName, FileMode.Create, FileAccess.Write))
+                    {
+                        totalTimeSw.Start();
+                        session.EventStream.CopyTo(fs, 5 * 1024 * 1024);
+                        totalTimeSw.Stop();
+                    }
+                    EventPipeEventSource epes = new EventPipeEventSource(fileName);
+                    epes.Dynamic.All += (TraceEvent data) => {
+                        eventsRead += 1;
+                    };
+                    epes.Process();
+                    Console.WriteLine("Read total: " + eventsRead.ToString());
+                    Console.WriteLine("Dropped total: " + epes.EventsLost.ToString());
+
+                    return new TestResult(eventsRead, epes.EventsLost, totalTimeSw.Elapsed);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw new Exception();
+                }
+                finally
+                {
+                    if (File.Exists(fileName))
+                        File.Delete(fileName);
+                }
             };
         }
 
@@ -277,7 +290,7 @@ namespace Orchestrator
                         affinityMask |= ((ulong)1 << j);
                     }
                     eventWritingProc.ProcessorAffinity = (IntPtr)((ulong)eventWritingProc.ProcessorAffinity & affinityMask);
-                    eventWritingProc.PriorityClass = ProcessPriorityClass.RealTime; // Set the process priority to highest possible
+                    // eventWritingProc.PriorityClass = ProcessPriorityClass.RealTime; // Set the process priority to highest possible
                 }
 
                 // Start listening to the event.

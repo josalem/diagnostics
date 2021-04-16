@@ -86,11 +86,12 @@ namespace Stress
 
             Thread[] threadArray = new Thread[threads];
             TaskCompletionSource<bool>[] tcsArray = new TaskCompletionSource<bool>[threads];
+            ManualResetEvent mre = new ManualResetEvent(false);
 
             for (int i = 0; i < threads; i++)
             {
                 var tcs = new TaskCompletionSource<bool>();
-                threadArray[i] = new Thread(() => { threadProc(); tcs.TrySetResult(true); });
+                threadArray[i] = new Thread(() => { mre.WaitOne(); threadProc(); tcs.TrySetResult(true); });
                 tcsArray[i] = tcs;
             }
 
@@ -154,8 +155,10 @@ namespace Stress
             }
             else
             {
+                var durationTask = Task.Delay(durationTimeSpan);
+                mre.Set();
                 Task threadCompletionTask = Task.WhenAll(tcsArray.Select(tcs => tcs.Task));
-                Task result = await Task.WhenAny(Task.Delay(durationTimeSpan), threadCompletionTask);
+                Task result = await Task.WhenAny(durationTask, threadCompletionTask);
                 finished = true;
                 await threadCompletionTask;
             }
